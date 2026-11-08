@@ -32,6 +32,9 @@ def ensure_default_accounts(db: Session):
                 created_at=datetime.utcnow()
             )
             db.add(admin)
+        else:
+            admin.hashed_password = get_password_hash("Admin@FujiQ2026!")
+            admin.is_active = True
 
         staff = db.query(User).filter(User.email == "staff@fujiq.jp").first()
         if not staff:
@@ -44,6 +47,9 @@ def ensure_default_accounts(db: Session):
                 created_at=datetime.utcnow()
             )
             db.add(staff)
+        else:
+            staff.hashed_password = get_password_hash("Staff@FujiQ2026!")
+            staff.is_active = True
 
         db.commit()
     except Exception as e:

@@ -8,10 +8,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == login_data.email).first()
-    if not user and login_data.email in ["admin@fujiq.jp", "staff@fujiq.jp"]:
-        ensure_default_accounts(db)
-        user = db.query(User).filter(User.email == login_data.email).first()
+    email_clean = str(login_data.email).strip().lower()
+    user = db.query(User).filter(User.email.ilike(email_clean)).first()
+    
+    if email_clean in ["admin@fujiq.jp", "staff@fujiq.jp"]:
+        if not user or not verify_password(login_data.password, user.hashed_password):
+            ensure_default_accounts(db)
+            user = db.query(User).filter(User.email.ilike(email_clean)).first()
 
     if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(

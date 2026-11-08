@@ -18,7 +18,9 @@ export const Login: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await authApi.login(email, password);
+      const cleanEmail = email.trim();
+      const cleanPassword = password.trim();
+      const data = await authApi.login(cleanEmail, cleanPassword);
       login(data.access_token, data.user);
       navigate('/');
     } catch (err: any) {
