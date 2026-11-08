@@ -12,22 +12,26 @@ from app.routers import (
     recommendations, reports, users
 )
 
+import threading
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database tables are created & seeded
-    Base.metadata.create_all(bind=engine)
+    # Startup: Ensure database tables are created immediately
     try:
-        seed_database()
+        Base.metadata.create_all(bind=engine)
     except Exception as e:
-        print(f"Startup seed notice: {e}")
-    
-    # Ensure Scikit-learn AI models are loaded/trained
+        print(f"Table creation notice: {e}")
+
+    # Ensure Scikit-learn AI models are loaded
     try:
         load_wait_time_model()
         load_demand_model()
     except Exception as e:
         print(f"ML Model initialization notice: {e}")
-        
+
+    # Seed data asynchronously in background to ensure zero delay on port binding
+    threading.Thread(target=seed_database, daemon=True).start()
+
     yield
     # Shutdown logic if any
 
