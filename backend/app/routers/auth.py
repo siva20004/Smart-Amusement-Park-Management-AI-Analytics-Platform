@@ -2,14 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
-from app.schemas import UserLogin, Token, UserOut, UserCreate
-from app.auth import verify_password, get_password_hash, create_access_token, get_current_user, require_admin, log_audit
+from app.auth import verify_password, get_password_hash, create_access_token, get_current_user, require_admin, log_audit, ensure_default_accounts
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
+    if not user and login_data.email in ["admin@fujiq.jp", "staff@fujiq.jp"]:
+        ensure_default_accounts(db)
+        user = db.query(User).filter(User.email == login_data.email).first()
+
     if not user or not verify_password(login_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

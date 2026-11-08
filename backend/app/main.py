@@ -16,11 +16,15 @@ import threading
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure database tables are created immediately
+    # Startup: Ensure database tables and demo accounts exist immediately
     try:
         Base.metadata.create_all(bind=engine)
+        from app.database import SessionLocal
+        from app.auth import ensure_default_accounts
+        with SessionLocal() as db_session:
+            ensure_default_accounts(db_session)
     except Exception as e:
-        print(f"Table creation notice: {e}")
+        print(f"Table/account creation notice: {e}")
 
     # Ensure Scikit-learn AI models are loaded
     try:

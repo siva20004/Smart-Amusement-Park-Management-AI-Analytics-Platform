@@ -18,6 +18,38 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+def ensure_default_accounts(db: Session):
+    """Guarantees the default admin and staff credentials exist in the database."""
+    try:
+        admin = db.query(User).filter(User.email == "admin@fujiq.jp").first()
+        if not admin:
+            admin = User(
+                email="admin@fujiq.jp",
+                hashed_password=get_password_hash("Admin@FujiQ2026!"),
+                full_name="Kenjiro Sato (佐藤 健二郎)",
+                role="admin",
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.add(admin)
+
+        staff = db.query(User).filter(User.email == "staff@fujiq.jp").first()
+        if not staff:
+            staff = User(
+                email="staff@fujiq.jp",
+                hashed_password=get_password_hash("Staff@FujiQ2026!"),
+                full_name="Aoi Takahashi (高橋 葵)",
+                role="staff",
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.add(staff)
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Notice during ensure_default_accounts: {e}")
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
